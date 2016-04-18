@@ -1,0 +1,18 @@
+TextBox:Person
+Rows:Map.People
+Top:10+index*25
+Left:10
+Text:Map.People.Name
+-------------
+TextBox:PersonActivities
+Rows:Form.Person -< Map.Activities Where Map.Activities.Start > #2016-01-29#
+Top:Parent.Top
+Left:10
+Text:Map.Activities.Name
+-------------                   
+TextBox:Person2
+Rows:Map.People
+Top:10+index*25
+Left:10
+Text:Map.People.Name     
+-------------

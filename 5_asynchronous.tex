@@ -1,0 +1,24 @@
+Javascript as a language deserves several books on it's own. In this chapter we only introduce the most elementary mechanisms required to prepare an implementation of the system.
+
+Writing synchronous code in Javascript requires no particular care other than being aware of variable hoisting and other small subtleties specific to this language. The code is executed sequentially in the order in which it is written. Writing asynchronous code on the other hand can be more complicated as it breaks the intuitive sequential flow of the program. Historically, in order to handle the result to an action that does not immediately compute a response, one had to specify a callback function upon which the deferred result could be applied. Figure~\ref{lst:callback} shows an example of such a callback function. In this short example, it is easy to mentally keep track on the logical flow of the program. However, as the program grows, callbacks quickly make the program hard to read and maintain.
+
+\lstinputlisting[
+    linerange={1-11},
+    caption={Shows how a function is called with a callback function as an argument and how, after 1000ms, this callback function is called with an actual result value to be used.},
+    label={lst:callback}
+]{callback.js}
+
+More recently Promises were introduced in Javascript. A promise is an object that represents the result to an asynchronous call and that is derived into one of 3 possible states:
+\begin{enumerate}
+    \item pending: The initial state of a promise, until one of the two other states occur;
+    \item resovled: When an operation was successful;
+    \item rejected: When an operation failed;
+\end{enumerate}
+
+A promise is constructed by using the \lstinline{new Promise} keyword and passing a factory function to it. When the promise is created, the factory function is called immediately with a first argument fulfilling the promise and a second argument rejecting it. When the operation has completed, one of the appropriate function is called.
+
+\lstinputlisting[
+    linerange={14-15},
+    caption={Example of a promise},
+    label={lst:promise}
+]{callback.js}

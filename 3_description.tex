@@ -1,0 +1,36 @@
+In this section we attempt to draw a clear picture about what we try to achieve. We study the anatomy of a visfile in figure~\ref{lst:visfileReference}, and talk in detail about formulas.
+
+\lstinputlisting[
+    linerange={1-15},
+    caption={example of a visfile},
+    label={lst:visfileReference}
+]{reference.vis}
+
+A visfile is the textual representation of the templateTree. The templateTree is the syntax tree that holds the in-memory definition of all templates listed in the visfile. It's root element is the visForm itself. A template is an object represented in the visfile by the set of lines from the begining of the file or from the previous template separator to the end of the file or to the next template separator. A template separator is characterized by two or more successive dash symbols.
+
+Each template is made of properties that holds the necessary informations about how a graphic instance will ultimately look like. In the visfile, every line, except from template separators and commented lines (starting with the symbol~\textquotesingle) contain a template property. Each of them is a key-value pair representing the property name along with a formula. The formula is an expression that will typically be defined by the designer and must be interpreted and evaluated by the visEngine. The compilation context of a formula depends the property key.
+
+Template properties can be separated into 3 distinct categories:
+\begin{itemize}
+    \item The first mandatory line in the template whose key addresses the visComponent type and formula gives a name to the template 
+    \item The property with name ``Rows'' contains a formula that is translated into a query targeting the external data provider. In our case, we will see how this translates into an oData query.
+    \item The rest of the properties in the template that provides formatting and behavioral information about the resulting graphical control. While evaluating the formulas for these properties, the computed value will typically override the default values defined in the targeted visComponent.
+\end{itemize}
+
+For performance reasons, at the end of the compilation process, the system will draw the generated graphic instances into an canvas object. The root element of the template tree is a special template that holds informations about how the first graphic instance drawn in the canvas should look like. On the reference diagram in figure~\ref{img:refDiagram} this element represents the grey area that surrounds all other elements.
+
+The formula belonging to a ``Rows'' property can be split into two distinct parts delimited by the ``WHERE'' operator where the left-hand side gives information about the entities being addressed and the right-hand side gives information about the properties belonging to these entities and eventually the restriction\footnote{restricition should be understood in the sense of filters being applied to the set of relations} to operate on the resulting relation. On the left hand-side, many entities can be joined together by using different ``join'' operators.
+
+Line 8 in figure~\ref{lst:visfileReference} illustrates well how the ``rows'' property works. On the left-hand side of the ``WHERE'' clause, the operator symbol ``\texttt{-<}'' indicates that Form.Person should be left joined on Map.Activities and from the right hand side we know that the ``Start'' property is a ``candidate'' key in the sense that it will participate in the query to be generated. The join in this formula is performed between the two distinct type of objects. Form.Person is a template with name ``Person'' in the current visform and Map.Activities is a database table with name ``Activities''. As we will see in the chapter about oData the term ``entity'' is more appropriate to use than ``table'' since our application communicates with a database through an oData service that defines ``entity types'' as an abstraction layer on top of the database. Addressing a sibling template in the join means that that template will become parent to the current one in the template tree. Indeed, as we will see, at the end of the evaluation process when rendering, it will be necessary to produce a set of visComponent instances for each person, based on the current template description.
+
+In that regard, building the template tree implies to have a predefined list of all existing templates since one template might address another template as it's ``parent'' before it has been created.
+
+Addressable \emph{things} across the formulas resides in different ``address spaces''. In our example, at line 8 ``Person'' refers to a template that is located in the current form and ``Activities'' refers to an OData Entity that exists in the OData context. Looking up a reference inside a domain always implies that the given domain exists and that it contains the requested reference. Therefore, one of the main tasks for the system is to setup the domains along with all addressable objects in order order to prepare the system for the evaluation phase. During the application's lifetime the following address spaces exist:
+\begin{itemize}
+    \item The ``System'' is a global address space that contains global variables available at anytime during the compilation process
+    \item The ``VismForm'' is an address space containing meta-information about the database. It holds amongst others the OData uri, the available OData entities etc. The VismForm is built based on the description provided in the vismFile. Each template containing a rows property will be able to retreive the addressed entities from this address space. 
+    \item The ``VisForm'' is the address space that contains the template Tree. Thus it contains all the templates described in the visFile.
+    \item A ``Template'' is an address space because it can be refered to by other templates. One template can indeed access the properties of other templates by exploring the template tree located in the ``visForm''.
+\end{itemize}
+
+\todo[inline]{vism file description will come here\dots}

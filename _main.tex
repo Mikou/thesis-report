@@ -1,0 +1,46 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{import}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true
+}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{svg}
+\usepackage{lscape}
+\usepackage{todonotes}
+
+\setlength{\parskip}{0.5em}
+
+
+\title{How can VisTool's runtime be executed on a javascript engine in a web browser, and it's system dependent resources be addressed across a distributed environment?}
+\author{Michael Jespersen}
+\date{February 2016}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+\import{sections/}{1_introduction.tex}
+
+\section{Architecture}
+\label{sec:architecture}
+\import{sections/}{2_architecture.tex}
+
+\section{Language description}
+\label{sec:description}
+\import{sections/}{3_description.tex}
+
+\section{VisEngine API}
+\label{sec:API}
+\import{sections/}{4_API.tex}
+
+%\section{javascript}
+%\import{sections/}{5_asynchronous.tex}
+
+\end{document}

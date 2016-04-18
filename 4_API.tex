@@ -1,0 +1,19 @@
+Our engine exposes a simple API accessible for a developer who wants to use the solution.
+
+At this point, the start up of the visEngine is done by 
+\begin{enumerate}
+    \item registering a file provider through the registerFileProvider method
+    \item registering an odatajs client service
+    \item starting the application by calling the run method along with the initial vism file to load
+\end{enumerate}
+
+
+\lstinputlisting[
+    linerange={1-15},
+    caption={example of a fileProvider},
+    label={lst:fileProvider}
+]{fileProvider.js}
+
+As we will see later, our engine also needs an OData client in order to parse the XML Metadata from the OData service. This dependency must be injected into our service through the uvis.odata method.
+
+When the external dependencies have been injected into our visEngine, the building process can be performed with a call to the public ``run'' method that expects a reference to an initial vismfile as an input parameter.
