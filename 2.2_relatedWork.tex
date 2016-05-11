@@ -1,0 +1,9 @@
+\subsection{VisTool}
+
+The current system is running under windows...
+
+\subsubsection{A runtime bound to the local operating system}
+
+Two types of source files are needed for generating a User Interface with VisTool. Vism files and Vis files. During the application's runtime, the vism file is opened first. The vismfile contains a reference to the initial vis file that is then opened.
+
+This "chaining" of the source files causes the current system to be bound to the computer's operating system. A user provides the initial ``vism'' file available on the file system and uvis can trust that the link provided to the initial ``vis'' file is located on the same file system.

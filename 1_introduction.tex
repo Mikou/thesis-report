@@ -1,3 +1,16 @@
+\subsection{Research question}
+
+VisTool is a data-visualization tool that enables users to visualize data from relational databases through the expression of simple queries executed against the data source and formatting rules applied to system-specific graphic components. It allows users, at different level, to tailor the system to their own needs.
+
+The current C\# implementation and the architecture of the system causes it's runtime to be tightly bound to resources located on the same local operating system running Windows.
+
+\subsection{Motivation}
+
+It has become a standard expectation from today's users to see their software products running as a Web client and to access it through a Browser. It is an interesting challenge to study the current system and see how it is possible to enable it's simultaneous use across multiple domains and exchange it's various runtime-depent data with locations defined by the domains in question.
+
+
+
+\iffalse
 Vistool (uvis) is a system that aims at facilitating readability and interaction with huge and complex relational datasets by allowing one to build a GUI on one hand and intuitively address and map data resources as part of this GUI on the other hand. An existing version of the system, written in C\# currently runs locally on a computer under Windows. The goal throughout this document is to demonstrate the feasibility of porting such a system in browsers and thereby making it platform agnostic. In that extent, Javascript is the de facto standard language to choose. The reference diagram in figure~\ref{img:refDiagram} clearly depicts the type of visual scenario we want to be able to produce in a browser. In addition to this we also want the solution to perform well even if the amount of graphic instances is big.
 
 \begin{figure}
@@ -38,3 +51,5 @@ The building process of the GUI can be roughly divided into 2 parts:
 \end{itemize}
 
 In the existing version of the application (running locally on a computer), a vism file is loaded by the visEngine through the operating system's file dialog that gives access to all files in the current user space on that particular file system. In our case where the application should be executed in the browser, the question of how and where to download the files arises. This question is tightly related to the system's architecture and is discussed in the next chapter.
+
+\fi

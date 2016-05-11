@@ -1,0 +1,80 @@
+\subsection{implementation}
+
+Many compilers have been written for solving all sorts of problems. Two interesting 
+
+
+In order to ease the procedure of writing the lowest level parts of the compiler, I have based my work on~\cite{bazon16}.
+
+\subsubsection{Input Stream}
+
+At the bottom level of the parser, a function is responsible for reading the input string character by character. The function returns 4 methods:
+
+\begin{itemize}
+    \item peek(), returns the next character in the string but does not increment the internal pointer;
+    \item next(), returns the next character in the string and increments the internal pointer by one;
+    \item eof(), returns true if the en of the string has been reached;
+    \item croak(message), throws an error with a given message;
+\end{itemize}
+
+The input stream represents an underlying building block for the tokenizer.
+
+\subsubsection{Tokenizer}
+
+The Tokenizer is a function that returns the same set of methods as the Input Stream but instead of returning single characters, the peek() and the next() methods return tokens. A token is an object with a type an a value. Our tokenizer can produce tokens similar to those in listing~\ref{lst:tokenExamples}:
+
+\begin{lstlisting}[
+    caption={example of tokens possibly produced by the tokenizer},
+    label={lst:tokenExamples}
+]
+{type:'id', value:'someValue'}
+{type:'str', value:'Hello World!'}
+{type:'num', value:0}
+{type:'op', value:'-<'}
+{type:'datetime', value:<momentJS Object>}
+{type:'path', value:<path Object>}
+{type:'separator', value:'--'}
+{type:'pathSeparator', value:'!'}
+{type:'EOL', value:'\n'}
+\end{lstlisting}
+
+The main idea behind the tokenizer is to look at the current character by invoking the peek() method and determinate what kind of token must be produced. Through the readNext function in listing~\ref{lst:tokenizerReadNext}, the tokenization process will be ``routed'' into one of the more specialized methods in order to finally compose the different tokens. The operations performed by the tokenizer depend on the syntax of the language we described previously.
+
+\lstinputlisting[
+    caption={The readNext function handles the main logic},
+    label={lst:tokenizerReadNext}
+]{code/readNext.js}
+
+Listing~\ref{lst:tokenizerReadNext} shows how the routing operations are performed in the ``readNext'' function:
+\begin{itemize}
+    \item it skips all white characters
+    \item it returns \texttt{null} if input.peek() points at the end of the source stream
+    \item it skips a comment if input.peek() returns the comment symbol ``\textquotesingle''
+    \item it reads a datetime if input.peek() returns the sharp symbol ``\#''
+    \item it reads a number if input.peek() returns one of the characters representing the start of a digit. The rules defining the start of a digit are written in the ``isDigit'' function.
+    \item it reads an identifier or a path if input.peek() returns one of the characters representing the start of an identifier. The rules defining the start of an identifier are written in the ``isIdStart'' function.
+    \item it reads an end of line if input.peek() meets the end of line symbol ``\\n''. 
+    \item it reads an operator if input.peek() meets an operator symbol as being defined by the ``isOpChar'' function.
+\end{itemize}
+
+It is worth noting that the ``readIdentOrPath'' function in listing~\ref{lst:readIdentOrPath} also contains an important part of the logic through 3 main operations:
+\begin{itemize}
+    \item it returns an identifier given that that identifier is not part of a path
+    \item it returns a path if several identifiers are separated by a path separator as being defined in the ``isPathSeparator'' function.
+    \item it returns the \texttt{WHERE} operator. This special operator cannot be recognized amongst the standard operator symbols so the tokenizer first recognizes an identifier and if that string happens to be equal to the string ``WHERE'' it is returned as an operator.
+\end{itemize}
+
+\lstinputlisting[
+    caption={The readNext function handles the main logic},
+    label={lst:readIdentOrPath}
+]{code/readNext.js}
+
+
+\subsubsection{Parser}
+
+The system is made of two parsers. One for parsing vism files another for parsing vis files. Both parser's are taking advantage of the same tokenizer. In this section we briefly describe how the vism file should be parsed and we go more into depth about how the vis parser works.
+
+\subsubsubsection{VismParser}
+
+\subsubsubsection{VisParser}
+
+The visParser 
