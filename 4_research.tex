@@ -1,3 +1,52 @@
+\subsection{Language description}
+
+In this section we attempt to draw a clear picture about what we try to achieve. We study the anatomy of a visfile in figure~\ref{lst:visfileReference}, and talk in detail about formulas.
+
+\lstinputlisting[
+    linerange={1-15},
+    caption={example of a visfile},
+    label={lst:visfileReference}
+]{reference.vis}
+
+A visfile is the textual representation of the templateTree that will be allocated in a Form as described in~\ref{sec:Form}. The templateTree is the syntax tree that holds the in-memory definition of all templates listed in the visfile. It's root element is the Form itself. A template is an object represented in the visfile by the set of lines from the beginning of the file or from the previous template separator to the end of the file or to the next template separator. A template separator is characterized by two or more successive dash symbols.
+
+Each template is made of properties that holds the necessary code (formula) for what should be evaluated and assigned to the properties of the different graphic instances that will ultimately be rendered. In the visfile, every line, except from template separators and commented lines (starting with the symbol~``\textquotesingle'') contain a template property. Each of them is a key-value pair representing the property name along with a formula. The formula is an expression that will typically be defined by the designer --with the eventual support of a ``WYSIWYG'' layer that the system should also provide-- and must be interpreted and evaluated by the visEngine. The compilation context of a formula depends on the property key.
+
+Template properties can be separated into 3 distinct categories:
+\begin{itemize}
+    \item The first, mandatory, addresses the \emph{type} of Component to be instantiated and it's respective formula \emph{must} be a string that gives its name to the template;
+    \item The property with name ``Rows'' contains a formula that is translated into a query targeting the external data provider. In our case, we will see how, depending on how the system is configured, this can translate into an oData query.
+    \item The rest of the properties in the template are providing formatting rules and behavioral rules for the resulting graphical controls. While evaluating the formulas for these properties, the resulting computed value will typically override the default values defined in the targeted Component.
+\end{itemize}
+
+For performance reasons, at the end of the compilation process, the system will draw the generated graphic instances into an HTML5 canvas object. The root element of the template tree is a special template that holds informations about how the first graphic instance drawn in the canvas should look like. On the reference diagram in figure~\ref{img:refDiagram} this element represents the grey area that surrounds all other elements. Note that the first template described in the vis file can be either a standard template (as described above) or it can be a ``special'' template containing formatting rules to be assigned to the canvas (eg. width, height etc.). The reference file in figure~\ref{lst:visfileReference} show a vis file with a ``form header''.
+
+The formula belonging to a ``Rows'' property can be split into two distinct parts delimited by the ``WHERE'' operator where the left-hand side gives the information of what element being addressed and the right-hand side gives the information what properties belonging to these entities and eventually the restriction\footnote{restricition should be understood in the sense of filters being applied to the set of relations} to be performed on the resulting set. On the left hand-side, many elements can be joined together by using different ``join'' operators.
+
+Line 8 in figure~\ref{lst:visfileReference} illustrates well how the ``rows'' property works. On the left-hand side of the ``WHERE'' clause, the operator symbol ``\texttt{-<}'' indicates that Form.Person should be left joined on Map.Activities and from the right hand side we know that the ``Start'' property is a ``candidate'' key in the sense that it will participate in the query to be generated. The join in this formula is performed between the two distinct type of objects. Form.Person is a template with name ``Person'' in the current visform and Map.Activities is a database table with name ``Activities''. As we will see in the chapter about oData the term ``entity'' is more appropriate to use than ``table'' since our application communicates with a database through an oData service that defines ``entity types'' as an abstraction layer on top of the database. Addressing a sibling template in the join means that that template will become parent to the current one in the template tree. Indeed, as we will see, at the end of the evaluation process when rendering, it will be necessary to produce a set of visComponent instances for each person, based on the current template description.
+
+In that regard, building the template tree implies to have a predefined list of all existing templates since one template might address another template as it's ``parent'' before it has been created.
+
+Addressable \emph{elements} across the formulas resides in different ``address spaces''. In our example, at line 12 ``Person'' refers to a template that is located in the current form and ``Activities'' refers to a ``data Entity'' that exists in the ``data context''. Looking up a reference inside an address space always implies that it exists and that it contains the requested reference. One of the main tasks that the system performs at different moments of the application flow is to setup the address spaces. The evaluation phase depends on this. During the application's lifetime the following address spaces will be created at some point in time:
+\begin{itemize}
+    \item The ``System'' is a global address space that contains global variables available at anytime during the compilation process
+    \item The ``Map'' is an address space containing meta-information about the database. It holds amongst others the OData uri, the available OData entities etc. The VismForm is built based on the description provided in the vismFile. Each template containing a rows property will be able to retreive the addressed entities from this address space.
+    \todo[inline]{Instead of the OData uri, the Map will contain a ``Data context'' that will allow to configure the system to use any wanted data strategy. I am planning to implement this and it will make my system independent of OData.}
+    \item The ``Form'' is the address space that contains the template Tree. Thus it contains all the templates described in the visFile.
+    \item A ``Template'' is an address space because it can be refered to by other templates. One template can indeed access the properties of other templates by exploring the template tree located in the ``visForm''.
+\end{itemize}
+
+The designer expresses what element to address in what address space through a ``path''. In our previous example, \texttt{Form.Person} and \texttt{Map.Activities} are examples of paths. A path is a particular token of words in the formula and they are separated by ``path separators''. The left-most word represents a ``path perfix'' that specifies the address space to target and the right most word is a property on the recovered element or set of elements. The path separators can be one of two kinds:
+\begin{itemize}
+    \item a dot (with symbol ``.''),
+    \item a bang (with symbol ``!'')
+\end{itemize}.
+
+The path separators are working as a ``routing'' mechanism
+
+\todo[inline]{vism file description will come here\dots}
+
+
 \subsection{implementation}
 
 Many compilers have been written for solving all sorts of problems. Two interesting 
@@ -5,7 +54,7 @@ Many compilers have been written for solving all sorts of problems. Two interest
 
 In order to ease the procedure of writing the lowest level parts of the compiler, I have based my work on~\cite{bazon16}.
 
-\subsubsection{Input Stream}
+\subsubsection{Stream Reader}
 
 At the bottom level of the parser, a function is responsible for reading the input string character by character. The function returns 4 methods:
 
@@ -66,15 +115,50 @@ It is worth noting that the ``readIdentOrPath'' function in listing~\ref{lst:rea
 \lstinputlisting[
     caption={The readNext function handles the main logic},
     label={lst:readIdentOrPath}
-]{code/readNext.js}
+]{code/readIdentOrPath.js}
 
+\subsubsection{Form and Canvas}
+
+Before going into the details of the parser that is the subsequent step coming after the tokenization it is important to introduce the Form and the Canvas which are two entites that are used heavily by the system and that it relies on at the very moment of parsing and later on in the application flow.
+
+\paragraph{Canvas}
+\label{sec:Canvas}
+
+\paragraph{Form}
+\label{sec:Form}
 
 \subsubsection{Parser}
+\label{sec:Parser}
 
-The system is made of two parsers. One for parsing vism files another for parsing vis files. Both parser's are taking advantage of the same tokenizer. In this section we briefly describe how the vism file should be parsed and we go more into depth about how the vis parser works.
+The system uses two distinct parsers: One for parsing vism files another for parsing vis files. Both parser's are taking advantage of the same tokenizer. Each parser is a Javascript module that exposes a simple interface that contains:
+\begin{itemize}
+    \item An ``init'' method through which it can be configured an which \emph{must} be invoked before starting the actual parsing process.
+    \item A ``Parse'' method that triggers the actual parsing process that depends amongst others on the provided configuration.
+\end{itemize}
 
-\subsubsubsection{VismParser}
+\lstinputlisting[
+    caption={Example of how the visParser is configured and used},
+    label={lst:initVisParser}
+]{code/initVisParser.js}
 
-\subsubsubsection{VisParser}
+listing~\ref{lst:initVisParser} shows a concrete example of how the visParser is used.
 
-The visParser 
+\paragraph{VismParser}
+\label{sec:VismParser}
+The vismParser is simple. Only a tokenizer is expected in order to configure the module. When the  
+
+\paragraph{VisParser}
+\label{sec:VisParser}
+
+The visParser exposes the ``init'' method that takes an object as an input parameter. This object should contain the following properties:
+\begin{itemize}
+    \item tokenizer, the object resulting from the tokenization process with the methods: next, peek, eof and croak
+    \item canvas, the canvas module. \ref{}
+\end{itemize}
+
+
+\subsection{Pre-evaluate}
+\label{sec:PreEvaluate}
+
+\subsection{Evaluate}
+\label{sec:Eval}

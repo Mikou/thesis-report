@@ -1,3 +1,7 @@
+Width: 640
+Height: 480
+Name: ReferenceForm
+-------------
 TextBox:Person
 Rows:Map.People
 Top:10+index*25
