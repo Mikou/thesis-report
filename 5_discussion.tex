@@ -1,0 +1,48 @@
+\subsection{Transferability}
+
+The system can be tailored in many different ways to fit the context in which it is used. Through the implementation previously introduced, external resources are retrieved specifically to each domain thanks to the resource provider method. The data resource retrieval mechanism is also independent of the context, it also takes advantage of the resource provider method but also depends on the schemaParser, the schemaMapper and the queryHandler methods.
+
+\subsubsection{Default data providers}
+Various domains might decide to rely on the same strategies to access data resources, using data providers following strict protocols giving a reliable guaranty about how these resources will be represented.
+
+Shipping default sets of data resource methods supporting the most commonly used data protocols (json-schema, odata etc.) would ease the job of the developer who would be exempt from registering these methods unless the context of use has some none-standard requirements
+
+\subsubsection{ready to use service}
+Because of the transitive relation between the vism and the vis file, it is a requirement that the domain under which the system is operated specifies a custom method allowing to retrieve the external resources. Without it, the system would be unable to distinguish the resources coming from one domain and those coming from another one. Domains might need to keep their data privately stored within their own domain and it is a minimal requirement to allow a developer to customize the system in this way.
+
+Nonetheless, not all domains might worry about the privacy and the origin of their resources. Some others might just be interested in getting a quick view a how the system works. In this case, a default resource provider, binding the service to a specific resource location could be registered. In this case, many domains could operate under the same domain that would need to be maintained as a ``ready-to-use'' service.
+
+\subsubsection{extending further}
+By outsourcing part of the problem to developers across the various context of use, the discussed implementation attemps to give part of the answer to the question of transferability. But this question can be addressed even more extensively. The system could allow any of its internal components (system, map, form...) to be parametrized, tailored or substituted in various ways by enabling developers to configure the system in the same way as with the resource provider.
+
+The ``form'', handling how the data is rendered into the canvas, could for instance be entirely substituted by another component provided by the developer and answering some more specific needs. In this project, I have implemented the form in such a way that the in-memory representation of the rendered graphic instances gets stored into a tree. This is an optimal solution to use when the amount of graphic instances is huge and that they do not get updated frequently. However, some scenarios might put the system in use in a context where the number of graphic instances is negligible compared to the frequency at which these instances gets updated. This would be the case for instance if the graphic instances contains some animation for instance. In this case, instead of maintaining a representation tree, having the form implementing a ``game loop'' would be a good alternative.
+
+\subsection{Data Contract}
+
+
+\subsubsection{Javascript is (probably) not the right language}
+
+The lack of interfaces, classes etc. causes the system's safety to heavily depends on how well the developer interpreted the way the kernel and his own domain application should exchange data. To illustrate this, the resource provider method from the implementation is a good example of a situation where many things can go wrong. When using the resource provider, I have personally decided to pass in 3 arguments: A string representing the HTTP method, the request parameters and the name of the requested resource. There is no other way for the developer to know about this very specific setup. In this specific case I have chosen to pass these 3 arguments in this specific order because conventions have been established, heavily influenced by libraries such as jQuery. But really, Javascript as a language provides no support for the developer concerning how well he interprets the types the system provides and the types he returns to the system. This is bad both for productivity but also for the application's safety. It requires the developer to test heavily his configuration.
+
+solutions:
+
+\begin{itemize}
+  \item typescript 
+  \item http://www.contractsjs.org/
+\end{itemize}
+
+\subsubsection{}
+
+
+Contract between consumer and kernel: The kernel relies on resources that comes from the consumer and the consumer does in turn receive resources from the kernel. Javascript is weak when it comes to defining data contracts (no interfaces, no classes). Some solutions:
+\begin{itemize}
+\item External library to handle data contracts
+\item A well written documentation
+\end{itemize}
+
+
+
+\subsection{limitations }
+
+
+allow to customize the entire form (enabling different rendering strategies, game loop, representation tree etc...)

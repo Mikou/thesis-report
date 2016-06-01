@@ -9,9 +9,12 @@ function readIdentOrPath() {
     id = readWhile(isId);                                                                            
     const pathGroup = {};
     pathGroup['id'] = {type:'id', value:id};                                                         
-    if(isPathSeparator(input.peek())) {                                                         isPath = true;                                                                            pathGroup['separator'] = {type:'pathSeparator', value:input.next()};                      path.push(pathGroup);                                                                   }
+    if(isPathSeparator(input.peek())) {                         isPath = true;                                              pathGroup['separator'] = {
+      type:'pathSeparator', value:input.next()};            path.push(pathGroup);
+    }
   }       
-  if(id.toUpperCase() === 'WHERE') {                                                            return {type:"op", value:"WHERE"};                                                      
+  if(id.toUpperCase() === 'WHERE') {
+  return {type:"op", value:"WHERE"};                          
   }                                                                                                  
   if(path.length !== 0) {
     return { type: 'path', path: path }       

@@ -1,4 +1,4 @@
-\documentclass[12pt, a4paper]{article}
+\documentclass[12pt, paperA4]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{import}
 \usepackage{listings}
@@ -11,9 +11,17 @@
 \usepackage{svg}
 \usepackage{lscape}
 \usepackage{todonotes}
+\usepackage{epigraph}
+\usepackage{courier}
 
 \setlength{\parskip}{0.5em}
+\lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
+\lstset{framextopmargin=50pt,frame=bottomline}
 
+% TO BE REMOVE----------
+\usepackage[english]{babel}
+\usepackage{blindtext}
+%------------------------
 
 \title{How can VisTool be provided as an executable web client across various domains and it's runtime environment tailored in order to fit the needs of specific context of use?}
 \author{Michael Jespersen}
@@ -22,8 +30,17 @@
 \begin{document}
 \maketitle
 
+\clearpage
+
+\begin{abstract}
+Hello, here is some text without a meaning.This text should show what a printed text will looklike at this place. If you read this text, you will getno information.  Really?  Is there no information?Is  there  a  dierence  between  this  text  and  somenonsense like “Huardest gefburn”?  Kjift – not atall!   A  blind  text  like  this  gives  you  informationabout the selected font, how the letters are writtenand  an  impression  of  the  look.   This  text  shouldcontain all letters of the alphabet and it should bewritten  in  of  the  original  language.   There  is  noneed for special content,  but the length of wordsshould match the language.
+\end{abstract}
+
+\clearpage
+
 \tableofcontents
 
+\clearpage
 
 \section{Introduction}
 \import{sections/}{1_introduction.tex}
@@ -39,6 +56,7 @@
 
 
 \section{Discussion}
+\import{sections/}{5_discussion.tex}
 
 \section{Conclusion}
 What is the answer ?

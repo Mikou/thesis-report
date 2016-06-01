@@ -1,18 +1,19 @@
-StartUpForm: "initial.vis"
-RenderEngine: WebComponents
-LimitedRows: 0
+' uvis reference card simulation
+
+LimitedRows: false, 200
+InteractionMode: DesignWithControl
+SimulatedTime: true, #01-05-2015 11:15#
 SimulatedUpdate: true
-----------------
-Database: "http://localhost:8088/service.svc/"
-----------------
-Table: People
-ID: "NOT YET IMPLEMENTED"
-Age: "NOT YET IMPLEMENTED"
-Name: "NOT YET IMPLEMENTED"
-----------------
-Table: Activities
-ID: "NOT YET IMPLEMENTED"
-Name: "NOT YET IMPLEMENTED"
-Start: "NOT YET IMPLEMENTED"
-End: "NOT YET IMPLEMENTED"
-----------------
+StartUpForm : "initial.vis"
+--------------------------------
+Database: Provider="http://consumer1.dk/dataService/", Source="datapackage.json"
+--------------------------------
+Table: activity
+person: one, join person on activity.pid = person.id
+project: one, join project on activity.pcode = project.code
+--------------------------------
+Table: person
+activity: many, join activity on person.id = activity.pid
+--------------------------------
+Table: project
+activity: many, join activity on person.id = activity.pid

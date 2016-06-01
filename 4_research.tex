@@ -1,6 +1,8 @@
 \subsection{Language description}
 
-In this section we attempt to draw a clear picture about what we try to achieve. We study the anatomy of a visfile in figure~\ref{lst:visfileReference}, and talk in detail about formulas.
+In this section I attempt to draw a clear picture about the semantic of the language. I present the anatomy of a visfile in figure~\ref{lst:visfileReference}, and talk in detail about formulas.
+
+\subsubsection{vis file}
 
 \lstinputlisting[
     linerange={1-15},
@@ -36,23 +38,53 @@ Addressable \emph{elements} across the formulas resides in different ``address s
     \item A ``Template'' is an address space because it can be refered to by other templates. One template can indeed access the properties of other templates by exploring the template tree located in the ``visForm''.
 \end{itemize}
 
-The designer expresses what element to address in what address space through a ``path''. In our previous example, \texttt{Form.Person} and \texttt{Map.Activities} are examples of paths. A path is a particular token of words in the formula and they are separated by ``path separators''. The left-most word represents a ``path perfix'' that specifies the address space to target and the right most word is a property on the recovered element or set of elements. The path separators can be one of two kinds:
+The designer expresses what element to address in what address space through a ``path''. In our previous example, \texttt{Form.Person} and \texttt{Map.Activities} are examples of paths. A path is a particular token of words in the formula and they are separated by a ``punctuation''. The left-most word represents a ``path perfix'' that specifies the address space to target and the right most word is a property on the recovered element or set of elements. The separation punctation can be one of two kinds:
 \begin{itemize}
     \item a dot (with symbol ``.''),
     \item a bang (with symbol ``!'')
 \end{itemize}.
 
-The path separators are working as a ``routing'' mechanism
+The punctuation mark help the engine to determinate what addressing space it should walk into. The dot is used to route it into the data rows of the targeted element, the bang is used to route the system into the bundle of components.
+
+Person.Name
+
+
+As a conclusion to the description of the language specific to a vis file it's content can be organized in different token types:
+\begin{itemize}
+    \item a form
+    \item a form header
+    \item a comment
+    \item an empty line
+    \item a template
+    \item a template separator
+    \item a template property
+    \item a formula
+\end{itemize}
+
+Subsequently a formula can be divided into it's own set of tokens:
+\begin{itemize}
+    \item a path
+    \item a punctuation
+    \item an operator
+    \item an identifier
+\end{itemize}
 
 \todo[inline]{vism file description will come here\dots}
 
 
 \subsection{implementation}
 
-Many compilers have been written for solving all sorts of problems. Two interesting 
+Many compilers have been written for solving all sorts of problems. I have found two good examples~\cite{bazon16},\cite{crockford2007} of simple interpreters implemented in Javascript and I have used~\cite{bazon16} as a starting point for my own implementation.
 
+I prefered the approach of Mihai Bazon because he takes advantage of the ``dynamic''\footnote{In javascript, types are dynamically assigned at runtime} aspect of Javascript in order to solve the problem of interpreting a language in a ``functional'' manner.
 
-In order to ease the procedure of writing the lowest level parts of the compiler, I have based my work on~\cite{bazon16}.
+\lstinputlisting[
+    linerange={1-15},
+    caption={example of an anonymous function},
+    label={lst:lambda}
+]{code/lambda.js}
+
+Thanks to it's dynamic type system, it is possible in Javascript to pass a function as an input parameter to another function as illustrated in listing\ref{lst:lambda}. This principle enables us to define the production rules of our grammar as the body of various functions which can be passed around to other functions defining, in turn, their own set of rules.
 
 \subsubsection{Stream Reader}
 
@@ -69,7 +101,7 @@ The input stream represents an underlying building block for the tokenizer.
 
 \subsubsection{Tokenizer}
 
-The Tokenizer is a function that returns the same set of methods as the Input Stream but instead of returning single characters, the peek() and the next() methods return tokens. A token is an object with a type an a value. Our tokenizer can produce tokens similar to those in listing~\ref{lst:tokenExamples}:
+The Tokenizer is a function that returns the same set of methods as the Input Stream but instead of returning characters, the peek() and the next() methods return tokens. A token is an object with a type an a value. Our tokenizer can produce tokens similar to those in listing~\ref{lst:tokenExamples}:
 
 \begin{lstlisting}[
     caption={example of tokens possibly produced by the tokenizer},
@@ -104,18 +136,6 @@ Listing~\ref{lst:tokenizerReadNext} shows how the routing operations are perform
     \item it reads an end of line if input.peek() meets the end of line symbol ``\\n''. 
     \item it reads an operator if input.peek() meets an operator symbol as being defined by the ``isOpChar'' function.
 \end{itemize}
-
-It is worth noting that the ``readIdentOrPath'' function in listing~\ref{lst:readIdentOrPath} also contains an important part of the logic through 3 main operations:
-\begin{itemize}
-    \item it returns an identifier given that that identifier is not part of a path
-    \item it returns a path if several identifiers are separated by a path separator as being defined in the ``isPathSeparator'' function.
-    \item it returns the \texttt{WHERE} operator. This special operator cannot be recognized amongst the standard operator symbols so the tokenizer first recognizes an identifier and if that string happens to be equal to the string ``WHERE'' it is returned as an operator.
-\end{itemize}
-
-\lstinputlisting[
-    caption={The readNext function handles the main logic},
-    label={lst:readIdentOrPath}
-]{code/readIdentOrPath.js}
 
 \subsubsection{Form and Canvas}
 
@@ -153,7 +173,7 @@ The vismParser is simple. Only a tokenizer is expected in order to configure the
 The visParser exposes the ``init'' method that takes an object as an input parameter. This object should contain the following properties:
 \begin{itemize}
     \item tokenizer, the object resulting from the tokenization process with the methods: next, peek, eof and croak
-    \item canvas, the canvas module. \ref{}
+    \item canvas, the canvas module. 
 \end{itemize}
 
 
