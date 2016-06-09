@@ -1,90 +1,68 @@
 \subsection{Language description}
-
-In this section I attempt to draw a clear picture about the semantic of the language. I present the anatomy of a visfile in figure~\ref{lst:visfileReference}, and talk in detail about formulas.
+\label{sec:languageDescription}
+In this section I attempt to draw a clear picture about the semantic of the language. I speak about the anatomy of a visfile and a vismfile. I also clearly highlight what the final goal of the implementation has been and thereby what I have prioritized. Finally I explain how an indirection between the vismfile and the visfile is problematic in the context of a web-based environment and I suggest a mechanism to overcome it.
 
 \subsubsection{vis file}
 
 \lstinputlisting[
-    linerange={1-15},
     caption={example of a visfile},
     label={lst:visfileReference}
-]{reference.vis}
+]{code/reference.vis}
 
-A visfile is the textual representation of the templateTree that will be allocated in a Form as described in~\ref{sec:Form}. The templateTree is the syntax tree that holds the in-memory definition of all templates listed in the visfile. It's root element is the Form itself. A template is an object represented in the visfile by the set of lines from the beginning of the file or from the previous template separator to the end of the file or to the next template separator. A template separator is characterized by two or more successive dash symbols.
+A visfile is the textual specification of the components that must be rendered on the screen. Each component is described with a template which is represented in the visfile by the set of lines from the beginning of the file or from the previous template separator to the end of the file or to the next template separator. A template separator is characterized by two or more successive dash symbols (``--'').
 
-Each template is made of properties that holds the necessary code (formula) for what should be evaluated and assigned to the properties of the different graphic instances that will ultimately be rendered. In the visfile, every line, except from template separators and commented lines (starting with the symbol~``\textquotesingle'') contain a template property. Each of them is a key-value pair representing the property name along with a formula. The formula is an expression that will typically be defined by the designer --with the eventual support of a ``WYSIWYG'' layer that the system should also provide-- and must be interpreted and evaluated by the visEngine. The compilation context of a formula depends on the property key.
+Each template is made of properties that holds the necessary code (formula) for what should be evaluated and assigned to the properties of the different graphic instances that will ultimately be drawn on the screen. In the visfile, every line, except from template separators and commented lines (starting with the symbol~``\textquotesingle'') contains a template property. Each of them is a key-value pair representing the property name along with a formula. The formula is an expression that will typically be defined by the designer --with the eventual support of a ``drag-and-drop'' layer that the system should also provide-- and must be interpreted and evaluated by the visEngine.
 
 Template properties can be separated into 3 distinct categories:
 \begin{itemize}
-    \item The first, mandatory, addresses the \emph{type} of Component to be instantiated and it's respective formula \emph{must} be a string that gives its name to the template;
-    \item The property with name ``Rows'' contains a formula that is translated into a query targeting the external data provider. In our case, we will see how, depending on how the system is configured, this can translate into an oData query.
-    \item The rest of the properties in the template are providing formatting rules and behavioral rules for the resulting graphical controls. While evaluating the formulas for these properties, the resulting computed value will typically override the default values defined in the targeted Component.
+    \item The first, mandatory, addresses the \emph{type} of Component to be instantiated and it's respective formula --which \emph{must} be a string-- gives its name to the template;
+    \item The property with name Rows contains a formula that must be translated into a query string which will ultimately be sent against an external data service to retrieve the desired data resource instances. The construction of the query string depends on the in-memory ``query model'' that built by the system based on this formula;
+    \item The rest of the properties in the template are providing formatting rules and behavioral rules for the resulting graphical controls. While evaluating the formulas for these properties, the resulting computed value will shadow\footnote{I refer here to the notion of ``variable shadowing''. The default value of a graphic control is not overwritten but rather masked behind the user-defined value. This is necessary because the user might decide to remove the declaration for the given property in the template. In this case the system should be able to retrieve the initial default value.} the default value defined in the targeted component.
 \end{itemize}
 
-For performance reasons, at the end of the compilation process, the system will draw the generated graphic instances into an HTML5 canvas object. The root element of the template tree is a special template that holds informations about how the first graphic instance drawn in the canvas should look like. On the reference diagram in figure~\ref{img:refDiagram} this element represents the grey area that surrounds all other elements. Note that the first template described in the vis file can be either a standard template (as described above) or it can be a ``special'' template containing formatting rules to be assigned to the canvas (eg. width, height etc.). The reference file in figure~\ref{lst:visfileReference} show a vis file with a ``form header''.
+When declaring a property in a template, the designer indirectly refer to a property of a component. It is possible for the system to determinate whether or not the declaration of a template property is legal by reflecting it's existence on the addressed component. Similarly, when assigning a value to a component property, the type of this value should be validated to ensure that it can be properly used, internally by the component (eg. when drawing the component).
 
-The formula belonging to a ``Rows'' property can be split into two distinct parts delimited by the ``WHERE'' operator where the left-hand side gives the information of what element being addressed and the right-hand side gives the information what properties belonging to these entities and eventually the restriction\footnote{restricition should be understood in the sense of filters being applied to the set of relations} to be performed on the resulting set. On the left hand-side, many elements can be joined together by using different ``join'' operators.
-
-Line 8 in figure~\ref{lst:visfileReference} illustrates well how the ``rows'' property works. On the left-hand side of the ``WHERE'' clause, the operator symbol ``\texttt{-<}'' indicates that Form.Person should be left joined on Map.Activities and from the right hand side we know that the ``Start'' property is a ``candidate'' key in the sense that it will participate in the query to be generated. The join in this formula is performed between the two distinct type of objects. Form.Person is a template with name ``Person'' in the current visform and Map.Activities is a database table with name ``Activities''. As we will see in the chapter about oData the term ``entity'' is more appropriate to use than ``table'' since our application communicates with a database through an oData service that defines ``entity types'' as an abstraction layer on top of the database. Addressing a sibling template in the join means that that template will become parent to the current one in the template tree. Indeed, as we will see, at the end of the evaluation process when rendering, it will be necessary to produce a set of visComponent instances for each person, based on the current template description.
-
-In that regard, building the template tree implies to have a predefined list of all existing templates since one template might address another template as it's ``parent'' before it has been created.
-
-Addressable \emph{elements} across the formulas resides in different ``address spaces''. In our example, at line 12 ``Person'' refers to a template that is located in the current form and ``Activities'' refers to a ``data Entity'' that exists in the ``data context''. Looking up a reference inside an address space always implies that it exists and that it contains the requested reference. One of the main tasks that the system performs at different moments of the application flow is to setup the address spaces. The evaluation phase depends on this. During the application's lifetime the following address spaces will be created at some point in time:
+The formula relating to a template's properties forms an expression tree. It's expressions have different types, either terminal or nonterminal lexical elements specified by the formal grammar they part of. A formula belongs to the family of context-free grammars which means that the evaluation of any nonterminal expression ultimately leads to the evaluation of a single terminal expression. An expression can have one of the following types:
 \begin{itemize}
-    \item The ``System'' is a global address space that contains global variables available at anytime during the compilation process
-    \item The ``Map'' is an address space containing meta-information about the database. It holds amongst others the OData uri, the available OData entities etc. The VismForm is built based on the description provided in the vismFile. Each template containing a rows property will be able to retreive the addressed entities from this address space.
-    \todo[inline]{Instead of the OData uri, the Map will contain a ``Data context'' that will allow to configure the system to use any wanted data strategy. I am planning to implement this and it will make my system independent of OData.}
-    \item The ``Form'' is the address space that contains the template Tree. Thus it contains all the templates described in the visFile.
-    \item A ``Template'' is an address space because it can be refered to by other templates. One template can indeed access the properties of other templates by exploring the template tree located in the ``visForm''.
+    \item \emph{identifiers}: Terminal expression whose value is a string which that can be used to uniquely address a resource in the system's runtime environment;
+    \item \emph{numbers}: Terminal expression whose value is a number;
+    \item \emph{strings}: Terminal expression whose value is a string;
+    \item \emph{punctuations}: Terminal expression whose value is a punctuation symbol. eg: \texttt{!}, \texttt{.};
+    \item \emph{operator}: Terminal expression whose value is an operator symbol or the string ``WHERE''. eg: \texttt{+}, \texttt{-}, \texttt{-<}, \texttt{WHERE};
+    \item \emph{binary}: Nonterminal expression made of a left expression, an operator and a right expression. eg: \texttt{2~+~index~*~25};
+    \item \emph{path}: Nonterminal expression made of an sequence alternating an identifier and a punctuation. The first element in the sequence can be either an identifier or a punctuation. eg: \texttt{Form.txtPerson}, \texttt{Map.activity.id}, \texttt{Parent!Top}, \texttt{!Me};
+    \item \emph{formula}: Nonterminal expression working as a container for the entire expression tree.
 \end{itemize}
 
-The designer expresses what element to address in what address space through a ``path''. In our previous example, \texttt{Form.Person} and \texttt{Map.Activities} are examples of paths. A path is a particular token of words in the formula and they are separated by a ``punctuation''. The left-most word represents a ``path perfix'' that specifies the address space to target and the right most word is a property on the recovered element or set of elements. The separation punctation can be one of two kinds:
-\begin{itemize}
-    \item a dot (with symbol ``.''),
-    \item a bang (with symbol ``!'')
-\end{itemize}.
+In a formula, any operand can be a path. It allows the designer to walk into a specific address space\footnote{An Address space should be understood here in the sense of various objects accessible in the current environment (or scope) during the evaluation process} --enabling thereby the walk principle mentioned earlier-- in order to fetch some desired value. The punctuation value separating identifiers is used to either walk into a property of the component, when it is a bang symbol (``!'') or to walk into a data row when it is a dot symbol (``.''). Concretely, in the expression \texttt{Me.Top} the designer refers to the field with name Top in the data row of the current component whereas in the expression \texttt{Me!Top} he refers to the property with name Top of the current component. In principle, a path can have an undetermined length that matches the number of address spaces to walk into.
 
-The punctuation mark help the engine to determinate what addressing space it should walk into. The dot is used to route it into the data rows of the targeted element, the bang is used to route the system into the bundle of components.
+When an identifier in a path doesn't match any known object, the system should be able to infer if that identifier's value is a property of some object in the current scope and if so, use it's value. This allows the designer to omit to explicitly mention the address space. For instance, instead of typing Form.txtPerson he can simply type txtPerson in order to address the template with name txtPerson in the current form. If referring to more than a single object, the system should warn the designer that what he tries to address is ambiguous.
 
-Person.Name
+Parts of what the designer can address in the formula of a template property depends on what he defines in the Rows property. In listing~\ref{lst:visfileReference}, in the template named txtActivity, everything on the left hand-side of the ``WHERE'' operator indicate resources that must participate in the query that will be built for that particular template. In this case, two different types of objects are addressed: Another template in the current form (txtPerson) and two resources from the database (activity and project). When addressing a sibling template, the designer indirectly addresses the requested resource for that template, in this case: Map.person. The current template (txtActivity) becomes a child to the addressed template (txtPerson) and the entire query model gets written into the parent. In this case, that model should represent a request for all people, their related activities and for each activity the project it belongs to. What resource fields must participate in the query depends on what the designer addresses in the rest of the properties. For txtActivity, the field with name ``id'' in the resource with name ``activity'' and the field with name ``name'' in the resource with name ``project'' are candidate fields because they appear in the property of type ``Text''.
 
+There is no guarantee in regards to the order in which a designer decides to declare the templates in the file. In order to determine if a template is the child or the parent of another one, a list of all existing templates must have been established beforehand. Listing~\ref{lst:visfileReference} shows the unfortunate case where a designer declared txtPerson after trying to address it in txtActivity. Without an existing list of all the declared templates in the file, this would cause the reference to point at an undeclared template.
 
-As a conclusion to the description of the language specific to a vis file it's content can be organized in different token types:
-\begin{itemize}
-    \item a form
-    \item a form header
-    \item a comment
-    \item an empty line
-    \item a template
-    \item a template separator
-    \item a template property
-    \item a formula
-\end{itemize}
+Another unfortunate case occurs if the designer addresses a template and from that template he refers back to the initial template. It would cause the system to infinitely look for the parent template causing a cyclic parent reference. This situation should be caught and prevented. This represents a final milestone in my project and has been the primary goal to achieve.
 
-Subsequently a formula can be divided into it's own set of tokens:
-\begin{itemize}
-    \item a path
-    \item a punctuation
-    \item an operator
-    \item an identifier
-\end{itemize}
+What clearly appears from studying the visfile is that the interpretation must be divided into two separate phases. A first phase, where the system builds the template and the query models and execute these models against the data provider (we will use the term pre-evaluate). A second phase where the system, based on the provided data instances will compute the actual expressions in the formulas (we will use the term evaluate).
 
-\todo[inline]{vism file description will come here\dots}
+Whether a relation made by designer between two different resources is valid can be verified thanks to a data map. The data map depends on the schema known by the data provider. Not all data-providers give the necessary informations about the relations between resources. VisTool relies on another type of file in order to properly build the data-map. It is also from this file that the system gets the information about what visfile should be opened on startup.
 
+\subsubsection{vism file}
+When an user wants a particular user-interface, he opens a vism file. This file gives the name of the vis file that contains the actual source code describing how the user-interface should look like. It also contains information about the database, what provider to use and how to access the data service. Moreover, the vism file is designed with the idea in mind that the local developer should be able to test the interfaces.
 
-\subsection{implementation}
-
-Many compilers have been written for solving all sorts of problems. I have found two good examples~\cite{bazon16},\cite{crockford2007} of simple interpreters implemented in Javascript and I have used~\cite{bazon16} as a starting point for my own implementation.
-
-I prefered the approach of Mihai Bazon because he takes advantage of the ``dynamic''\footnote{In javascript, types are dynamically assigned at runtime} aspect of Javascript in order to solve the problem of interpreting a language in a ``functional'' manner.
+Through testing, one should be able to determine that all users easily understand how to read an interface, that abnormal data is shown properly (for instance if a requested dataset contains no data), that requests for external resources do not overload the service provider~\cite{lauesen2013}~p.13. 
 
 \lstinputlisting[
-    linerange={1-15},
-    caption={example of an anonymous function},
-    label={lst:lambda}
-]{code/lambda.js}
+    caption={example of a vismfile},
+    label={lst:vismfileReference}
+]{code/reference.vism}
 
-Thanks to it's dynamic type system, it is possible in Javascript to pass a function as an input parameter to another function as illustrated in listing\ref{lst:lambda}. This principle enables us to define the production rules of our grammar as the body of various functions which can be passed around to other functions defining, in turn, their own set of rules.
+Similarly as for the vis file, the vism file contains different templates of code separated by the separator syntax ``--''. Listing~\ref{lst:vismfileReference} shows how the maximal amount of external data resources to retrieve can be bound to an upper-limit. This ensures that no query will cause the system to block because it takes too long to compute. It also shows how the system's date can be manually defined in order to appropriately match a test scenario against the data to work with. When interacting with an interface an user can trigger update operations on the database, for test purposes these updates can be simulated in which case the actual data in the database will not be affected.
+
+The vism file makes it simple for the developer to switch database. Typically, when testing, different databases will be used to simulate different scenarios, the system takes this into account and allows to easily switch amongst them.
+
+\subsection{implementation}
 
 \subsubsection{Stream Reader}
 
@@ -121,7 +99,7 @@ The Tokenizer is a function that returns the same set of methods as the Input St
 The main idea behind the tokenizer is to look at the current character by invoking the peek() method and determinate what kind of token must be produced. Through the readNext function in listing~\ref{lst:tokenizerReadNext}, the tokenization process will be ``routed'' into one of the more specialized methods in order to finally compose the different tokens. The operations performed by the tokenizer depend on the syntax of the language we described previously.
 
 \lstinputlisting[
-    caption={The readNext function handles the main logic},
+    caption={The readNext function handles the main logic behind the tokenizer by routing the process into the appropriate state through a lookup of the first character.},
     label={lst:tokenizerReadNext}
 ]{code/readNext.js}
 

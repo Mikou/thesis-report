@@ -1,8 +1,8 @@
 ' uvis reference card simulation
 
-LimitedRows: false, 200
+LimitedRows: false, 200 
 InteractionMode: DesignWithControl
-SimulatedTime: true, #01-05-2015 11:15#
+SimulatedTime: true, #10-05-2015 11:15#
 SimulatedUpdate: true
 StartUpForm : "initial.vis"
 --------------------------------
@@ -16,4 +16,4 @@ Table: person
 activity: many, join activity on person.id = activity.pid
 --------------------------------
 Table: project
-activity: many, join activity on person.id = activity.pid
+activity: many, join activity on project.code = activity.pcode
