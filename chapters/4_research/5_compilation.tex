@@ -1,0 +1,9 @@
+The Canvas, the components and the methods to draw them\dots, these are the visible tip of the iceberg. In this section I will show how, the vis file is compiled in order to evaluate the types of components a designer has addressed, how these components are instantiated and how their respective properties are computed. Finally I will show how a form is rendered and thereby drawn onto the screen. 
+
+I will start by describing the lowest-level parts of the kernel and go towards the description of higher-order functions\footnote{The approach I followed heavily uses functions that takes other functions as their input parameters and can return new functions accordingly. As the compilation flow progresses, new functions are used to handle more and more general tasks} that all together help solving the task of generating screens such as shown in figure~\ref{img:screens}.
+
+The vism file contains the description of where to find the vis file itself, the description of the schema of addressable resources in the vis file and how these resources relate to each other. It also contains the source and methods used to access the resources. Before discussin in detail about the evaluation of a vis file, I will briefly discuss how the vism file is used to setup and make the system ready.
+
+When the vism file has been processed, the system knows the name of the vis file that is then opened and at that point, the evaluation of the actual GUI can start.
+
+Both the vism file and the vis file are taking advantage of the same tokenizer which is the very lowest-level component of the kernel. I'll start by this.

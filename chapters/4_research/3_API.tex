@@ -1,0 +1,29 @@
+\subsubsection{Events}
+
+In the sample application, when navigating between the different screens, the address bar of the browser gets updated. It is updated in such a way that the first component of its path matches the name of a corresponding vism file on the file server. \texttt{/geometry} will for instance refer to the vism file with name geometry.vism. The kernel holds no knowledge about the domain application and to how the url address should be constructed. Instead, a specific signal with a given value is sent from the kernel and can be listened to by the domain application. Whenever it receives a signal, the domain application can do anything it needs to do with the value that is also passed.
+
+The menu is made of a component of type NavBtn. When clicked, the component intructs the kernel to emit a ``navigation'' signal with the value of what the user has defined in it's ``GoTo'' property (\texttt{uvis.emit('navigation', link)}). On the other side, the domain application can listen to that signal and whenever it is fired, update the address bar accordingly with a handler function  (\texttt{uvis.addEventListener('navigation', handler)}).
+
+Within the kernel, the list of signals is maintained as a simple JavaScript object that binds the signal type together with a function to executed (the handler). A more scalable implementation would bind the type with an associated array eventually containing multiple handler functions. This would allow to execute more than a single action based on some event.
+
+Events makes it simple to enable communication between the kernel and the domain application while enabling these two to remain decoupled from each other. It would make sense to emit events at many other occasions. For instance when the kernel starts and finishes to download a vism file and a vis file and so on.
+
+Since the visEngine is unfortunately a bit slow to generate some of the interfaces, I decided to emit signals from the kernel whenever a rendering process starts and when it stops. This makes it possible for the domain application to notify the user that it is processing. This is also makes it easy to start and stop the timer that enables to measure the performance of computing an interface.
+
+\subsubsection{Configuration}
+
+Before being allowed to use the kernel, the consumer application must inform it about the various resources it needs in order to run properly. The kernel could expose many setter methods allowing to set the resource one by one. I decided to create a single configuration method in the kernel that expects a configuration object to be passed as it's input parameter. This makes it very explicit in the code what is sent to the kernel in order to configure it on start up.
+
+The configuration object should contain the resource provider function that I have mentioned earlier, the name of an initial vism file to open on start up and a selector, a DOM element that can be used as a placeholder for the kernel to inject the generated GUI (Toolbox and Canvas).
+
+The kernel will validate that configuration object as one of it's first operations. My current validation protocol is certainly too weak. The dynamic nature of JavaScript makes the contact point between two applications very loose in the sense that the language provides no or very litte verification of the types of values that are being passed around. Since the visEngine is a lot about the communication between the kernel and the consumer, a language such as TypeScript could garanty better safety to what values are passed into the kernel and also better support for the developer that must setup the domain specific application. More generally one of the biggest activities of the kernel is to validate inputs that comes from external users. In that sense, JavaScript as a language provides very little support.
+
+\subsubsection{Methods}
+
+The kernel also exposes a set of public methods that are very important for the consumer application since it must be able to extend the system. This is where components and validators, external to the kernel, are registered (I explain in detail what these are later). They could be part of the configuration object passed to the kernel on start-up but I have decided to leave them as separate methods. This allows to register new external component types and validators at runtime if needed.
+
+Event handling, configuration object and public methods, form together the kernel's public application programming interface (API). As I have already said JavaScript does not rely on classes and the concept of interfaces as understood in C\# or Java does not exist. The kernel's state is scoped to a function and it's state is not visible from the outside. The idea of an interface can be simulated by associating values to methods through a JavaScript object and returning that object to the outside world. This is in other words what the JavaScript module pattern that spoke about earlier\ref{sec:modulePattern} is. 
+
+I have used a tool called webpack (a module bundler) in order to make a distributable version of the kernel. It is a tool that takes the JavaScript source code, tranforms it and outputs the new content into a given destination. In order to make the public fields accessible for the consumer application I have explicitly assigned the object containing the API methods on the window object. \texttt{window.uvis = \{\}}. An even better implementation would be to allow the consumer application to choose what namespace should be associate to the kernel (\texttt{window.<namespace> = \{\}}). Webpack experts might have better ways to export the public methods into the global scope.
+
+The construction of the API within the kernel is visible in the file with name \texttt{src/main.js} from the kernel application. It's consumption by the consumer application is visible in the file \texttt{public/index.html} in the consumer application.

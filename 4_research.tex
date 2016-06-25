@@ -1,162 +1,132 @@
-\subsection{Language description}
-\label{sec:languageDescription}
-In this section I attempt to draw a clear picture about the semantic of the language. I speak about the anatomy of a visfile and a vismfile. I also clearly highlight what the final goal of the implementation has been and thereby what I have prioritized. Finally I explain how an indirection between the vismfile and the visfile is problematic in the context of a web-based environment and I suggest a mechanism to overcome it.
+\import{chapters/4_research/}{_intro}
 
-\subsubsection{vis file}
+\subsection{An architecture adapted to new usability conventions in the context of browsers}
+\label{sec:indirection}
+\import{chapters/4_research/}{1_architecture}
 
-\lstinputlisting[
-    caption={example of a visfile},
-    label={lst:visfileReference}
-]{code/reference.vis}
+\subsection{Sample Application, a concrete Study Case}
+\label{sec:studyCase}
+\import{chapters/4_research/}{2_studyCase}
 
-A visfile is the textual specification of the components that must be rendered on the screen. Each component is described with a template which is represented in the visfile by the set of lines from the beginning of the file or from the previous template separator to the end of the file or to the next template separator. A template separator is characterized by two or more successive dash symbols (``--'').
+\subsection{VisEngine, Internal Communication, kernel API}
+\label{sec:API}
+\import{chapters/4_research/}{3_API}
 
-Each template is made of properties that holds the necessary code (formula) for what should be evaluated and assigned to the properties of the different graphic instances that will ultimately be drawn on the screen. In the visfile, every line, except from template separators and commented lines (starting with the symbol~``\textquotesingle'') contains a template property. Each of them is a key-value pair representing the property name along with a formula. The formula is an expression that will typically be defined by the designer --with the eventual support of a ``drag-and-drop'' layer that the system should also provide-- and must be interpreted and evaluated by the visEngine.
+\subsection{Components, Validators, Canvas}
+\label{sec:canvas}
+\import{chapters/4_research/}{4_canvas}
 
-Template properties can be separated into 3 distinct categories:
-\begin{itemize}
-    \item The first, mandatory, addresses the \emph{type} of Component to be instantiated and it's respective formula --which \emph{must} be a string-- gives its name to the template;
-    \item The property with name Rows contains a formula that must be translated into a query string which will ultimately be sent against an external data service to retrieve the desired data resource instances. The construction of the query string depends on the in-memory ``query model'' that built by the system based on this formula;
-    \item The rest of the properties in the template are providing formatting rules and behavioral rules for the resulting graphical controls. While evaluating the formulas for these properties, the resulting computed value will shadow\footnote{I refer here to the notion of ``variable shadowing''. The default value of a graphic control is not overwritten but rather masked behind the user-defined value. This is necessary because the user might decide to remove the declaration for the given property in the template. In this case the system should be able to retrieve the initial default value.} the default value defined in the targeted component.
-\end{itemize}
-
-When declaring a property in a template, the designer indirectly refer to a property of a component. It is possible for the system to determinate whether or not the declaration of a template property is legal by reflecting it's existence on the addressed component. Similarly, when assigning a value to a component property, the type of this value should be validated to ensure that it can be properly used, internally by the component (eg. when drawing the component).
-
-The formula relating to a template's properties forms an expression tree. It's expressions have different types, either terminal or nonterminal lexical elements specified by the formal grammar they part of. A formula belongs to the family of context-free grammars which means that the evaluation of any nonterminal expression ultimately leads to the evaluation of a single terminal expression. An expression can have one of the following types:
-\begin{itemize}
-    \item \emph{identifiers}: Terminal expression whose value is a string which that can be used to uniquely address a resource in the system's runtime environment;
-    \item \emph{numbers}: Terminal expression whose value is a number;
-    \item \emph{strings}: Terminal expression whose value is a string;
-    \item \emph{punctuations}: Terminal expression whose value is a punctuation symbol. eg: \texttt{!}, \texttt{.};
-    \item \emph{operator}: Terminal expression whose value is an operator symbol or the string ``WHERE''. eg: \texttt{+}, \texttt{-}, \texttt{-<}, \texttt{WHERE};
-    \item \emph{binary}: Nonterminal expression made of a left expression, an operator and a right expression. eg: \texttt{2~+~index~*~25};
-    \item \emph{path}: Nonterminal expression made of an sequence alternating an identifier and a punctuation. The first element in the sequence can be either an identifier or a punctuation. eg: \texttt{Form.txtPerson}, \texttt{Map.activity.id}, \texttt{Parent!Top}, \texttt{!Me};
-    \item \emph{formula}: Nonterminal expression working as a container for the entire expression tree.
-\end{itemize}
-
-In a formula, any operand can be a path. It allows the designer to walk into a specific address space\footnote{An Address space should be understood here in the sense of various objects accessible in the current environment (or scope) during the evaluation process} --enabling thereby the walk principle mentioned earlier-- in order to fetch some desired value. The punctuation value separating identifiers is used to either walk into a property of the component, when it is a bang symbol (``!'') or to walk into a data row when it is a dot symbol (``.''). Concretely, in the expression \texttt{Me.Top} the designer refers to the field with name Top in the data row of the current component whereas in the expression \texttt{Me!Top} he refers to the property with name Top of the current component. In principle, a path can have an undetermined length that matches the number of address spaces to walk into.
-
-When an identifier in a path doesn't match any known object, the system should be able to infer if that identifier's value is a property of some object in the current scope and if so, use it's value. This allows the designer to omit to explicitly mention the address space. For instance, instead of typing Form.txtPerson he can simply type txtPerson in order to address the template with name txtPerson in the current form. If referring to more than a single object, the system should warn the designer that what he tries to address is ambiguous.
-
-Parts of what the designer can address in the formula of a template property depends on what he defines in the Rows property. In listing~\ref{lst:visfileReference}, in the template named txtActivity, everything on the left hand-side of the ``WHERE'' operator indicate resources that must participate in the query that will be built for that particular template. In this case, two different types of objects are addressed: Another template in the current form (txtPerson) and two resources from the database (activity and project). When addressing a sibling template, the designer indirectly addresses the requested resource for that template, in this case: Map.person. The current template (txtActivity) becomes a child to the addressed template (txtPerson) and the entire query model gets written into the parent. In this case, that model should represent a request for all people, their related activities and for each activity the project it belongs to. What resource fields must participate in the query depends on what the designer addresses in the rest of the properties. For txtActivity, the field with name ``id'' in the resource with name ``activity'' and the field with name ``name'' in the resource with name ``project'' are candidate fields because they appear in the property of type ``Text''.
-
-There is no guarantee in regards to the order in which a designer decides to declare the templates in the file. In order to determine if a template is the child or the parent of another one, a list of all existing templates must have been established beforehand. Listing~\ref{lst:visfileReference} shows the unfortunate case where a designer declared txtPerson after trying to address it in txtActivity. Without an existing list of all the declared templates in the file, this would cause the reference to point at an undeclared template.
-
-Another unfortunate case occurs if the designer addresses a template and from that template he refers back to the initial template. It would cause the system to infinitely look for the parent template causing a cyclic parent reference. This situation should be caught and prevented. This represents a final milestone in my project and has been the primary goal to achieve.
-
-What clearly appears from studying the visfile is that the interpretation must be divided into two separate phases. A first phase, where the system builds the template and the query models and execute these models against the data provider (we will use the term pre-evaluate). A second phase where the system, based on the provided data instances will compute the actual expressions in the formulas (we will use the term evaluate).
-
-Whether a relation made by designer between two different resources is valid can be verified thanks to a data map. The data map depends on the schema known by the data provider. Not all data-providers give the necessary informations about the relations between resources. VisTool relies on another type of file in order to properly build the data-map. It is also from this file that the system gets the information about what visfile should be opened on startup.
-
-\subsubsection{vism file}
-When an user wants a particular user-interface, he opens a vism file. This file gives the name of the vis file that contains the actual source code describing how the user-interface should look like. It also contains information about the database, what provider to use and how to access the data service. Moreover, the vism file is designed with the idea in mind that the local developer should be able to test the interfaces.
-
-Through testing, one should be able to determine that all users easily understand how to read an interface, that abnormal data is shown properly (for instance if a requested dataset contains no data), that requests for external resources do not overload the service provider~\cite{lauesen2013}~p.13. 
-
-\lstinputlisting[
-    caption={example of a vismfile},
-    label={lst:vismfileReference}
-]{code/reference.vism}
-
-Similarly as for the vis file, the vism file contains different templates of code separated by the separator syntax ``--''. Listing~\ref{lst:vismfileReference} shows how the maximal amount of external data resources to retrieve can be bound to an upper-limit. This ensures that no query will cause the system to block because it takes too long to compute. It also shows how the system's date can be manually defined in order to appropriately match a test scenario against the data to work with. When interacting with an interface an user can trigger update operations on the database, for test purposes these updates can be simulated in which case the actual data in the database will not be affected.
-
-The vism file makes it simple for the developer to switch database. Typically, when testing, different databases will be used to simulate different scenarios, the system takes this into account and allows to easily switch amongst them.
-
-\subsection{implementation}
-
-\subsubsection{Stream Reader}
-
-At the bottom level of the parser, a function is responsible for reading the input string character by character. The function returns 4 methods:
-
-\begin{itemize}
-    \item peek(), returns the next character in the string but does not increment the internal pointer;
-    \item next(), returns the next character in the string and increments the internal pointer by one;
-    \item eof(), returns true if the en of the string has been reached;
-    \item croak(message), throws an error with a given message;
-\end{itemize}
-
-The input stream represents an underlying building block for the tokenizer.
+\subsection{Compilation process}
+\label{sec:compilation}
+\import{chapters/4_research/}{5_compilation}
 
 \subsubsection{Tokenizer}
+\label{sec:tokenizer}
+\import{chapters/4_research/}{5.1_tokenizer}
 
-The Tokenizer is a function that returns the same set of methods as the Input Stream but instead of returning characters, the peek() and the next() methods return tokens. A token is an object with a type an a value. Our tokenizer can produce tokens similar to those in listing~\ref{lst:tokenExamples}:
+\subsubsection{Parsers}
+\label{sec:parsers}
 
-\begin{lstlisting}[
-    caption={example of tokens possibly produced by the tokenizer},
-    label={lst:tokenExamples}
-]
-{type:'id', value:'someValue'}
-{type:'str', value:'Hello World!'}
-{type:'num', value:0}
-{type:'op', value:'-<'}
-{type:'datetime', value:<momentJS Object>}
-{type:'path', value:<path Object>}
-{type:'separator', value:'--'}
-{type:'pathSeparator', value:'!'}
-{type:'EOL', value:'\n'}
-\end{lstlisting}
-
-The main idea behind the tokenizer is to look at the current character by invoking the peek() method and determinate what kind of token must be produced. Through the readNext function in listing~\ref{lst:tokenizerReadNext}, the tokenization process will be ``routed'' into one of the more specialized methods in order to finally compose the different tokens. The operations performed by the tokenizer depend on the syntax of the language we described previously.
-
-\lstinputlisting[
-    caption={The readNext function handles the main logic behind the tokenizer by routing the process into the appropriate state through a lookup of the first character.},
-    label={lst:tokenizerReadNext}
-]{code/readNext.js}
-
-Listing~\ref{lst:tokenizerReadNext} shows how the routing operations are performed in the ``readNext'' function:
+The system uses two distinct parsers: One for parsing vism files another for parsing vis files. As I said, both parser's are using the same tokenizer. Each parser is a Javascript module that exposes a similar interface containing:
 \begin{itemize}
-    \item it skips all white characters
-    \item it returns \texttt{null} if input.peek() points at the end of the source stream
-    \item it skips a comment if input.peek() returns the comment symbol ``\textquotesingle''
-    \item it reads a datetime if input.peek() returns the sharp symbol ``\#''
-    \item it reads a number if input.peek() returns one of the characters representing the start of a digit. The rules defining the start of a digit are written in the ``isDigit'' function.
-    \item it reads an identifier or a path if input.peek() returns one of the characters representing the start of an identifier. The rules defining the start of an identifier are written in the ``isIdStart'' function.
-    \item it reads an end of line if input.peek() meets the end of line symbol ``\\n''. 
-    \item it reads an operator if input.peek() meets an operator symbol as being defined by the ``isOpChar'' function.
+    \item An ``init'' method that allows to initialize the module. The tokenizer and other modules that the parser depends on can thereby be injected.
+    \item A ``Parse'' method that triggers the actual parsing process.
 \end{itemize}
-
-\subsubsection{Form and Canvas}
-
-Before going into the details of the parser that is the subsequent step coming after the tokenization it is important to introduce the Form and the Canvas which are two entites that are used heavily by the system and that it relies on at the very moment of parsing and later on in the application flow.
-
-\paragraph{Canvas}
-\label{sec:Canvas}
-
-\paragraph{Form}
-\label{sec:Form}
-
-\subsubsection{Parser}
-\label{sec:Parser}
-
-The system uses two distinct parsers: One for parsing vism files another for parsing vis files. Both parser's are taking advantage of the same tokenizer. Each parser is a Javascript module that exposes a simple interface that contains:
-\begin{itemize}
-    \item An ``init'' method through which it can be configured an which \emph{must} be invoked before starting the actual parsing process.
-    \item A ``Parse'' method that triggers the actual parsing process that depends amongst others on the provided configuration.
-\end{itemize}
+Listing~\ref{lst:initVisParser} shows a concrete example of how the visParser is initialized and used. 
 
 \lstinputlisting[
     caption={Example of how the visParser is configured and used},
     label={lst:initVisParser}
 ]{code/initVisParser.js}
 
-listing~\ref{lst:initVisParser} shows a concrete example of how the visParser is used.
+\subsubsection{VismParser}
+\label{sec:vismParser}
+\import{chapters/4_research/}{5.2_vismParser}
 
-\paragraph{VismParser}
-\label{sec:VismParser}
-The vismParser is simple. Only a tokenizer is expected in order to configure the module. When the  
+\subsubsection{VisParser}
+\label{sec:visParser}
+\import{chapters/4_research/}{5.3_visParser}
 
-\paragraph{VisParser}
-\label{sec:VisParser}
+\subsection{Interpretation}
 
-The visParser exposes the ``init'' method that takes an object as an input parameter. This object should contain the following properties:
-\begin{itemize}
-    \item tokenizer, the object resulting from the tokenization process with the methods: next, peek, eof and croak
-    \item canvas, the canvas module. 
-\end{itemize}
+\subsection{Compilation flow}
 
+Before getting into the detail of the interpretation, a brief recall of the entire program flow will hopefully help the reader to easier follow.
+
+The consumer application starts by configuring the system in order to pass the resource provider method and the placeholder (DOM element) that the interface will be injected into.
+
+The application is then started by the consumer application by invoking the \texttt{uvis.openVismFile('<filename>')} method from the public API (in the file~\texttt{kernel/src/main.js}). The entire kernel is reset. This is useful when an interface was already generated, in order to unset all the objects (template list etc.). The content of the vismfile is asynchronously retrieved. Then, the vismParser parses the vismfile. Depending on whether or not the vismfile describes a database or not, a database schema will be built, the content of the visfile whose name was retrieved from the vismfile will be asynchronously downloaded.
+
+The kernel will then try to get the data instances required for evaluation. The pre-evaluation phase reorganizes the templates into a template tree and prepares the set of queries that will be executed in order to retrieve these instances.
+
+Then, when the data instances have been downloaded, the interface can be rendered. This is where the evaluation phase comes in. It computes the expression trees in each formula into an actual value in order to assign it to the component type addressed for each template.
+
+The pre-evaluation and evaluation phases share a code structure that is quite similar. What really changes is the semantic meaning given to the nodes of type path in both of these contexts. In the pre-evaluation phase they will help to construct or find the allocation spaces and fill them with appropriate values, in the evaluation phase they will serve the purpose of retrieving and consuming the data.
 
 \subsection{Pre-evaluate}
 \label{sec:PreEvaluate}
+
+\lstinputlisting[
+    caption={function describing how to get the data instances needed for the evaluation},
+    label={lst:getInstances}
+]{code/allocation/getInstances.js}
+
+Listing~\ref{lst:getInstances} shows how the system recovers the data instances. It shows also that it uses the \texttt{preEvaluation} function. That function takes two input parameters. An expression and an environment. The expression is the node tree to be pre-evaluated, the formula. The environment, is an object that represent the scope, the set of addressable things during the pre-evaluation.
+
+What listing~\ref{lst:getInstances} also tells us is that \texttt{{preEvaluate}} is first called for evaluating the formula relative to the \texttt{Rows} property and then, it is called as many times as the total number of properties in the template. Another implementation style could possibly split the preEvaluation function into two distinct functions. One exclusively used for pre-evaluating the \texttt{Rows} formula, another one to pre-evaluate the rest of the properties. The consequence of having these functions as a single one is that the \texttt{preEvaluation} function needs to perform additional tests to determine what type of property it is dealing with, when entering a node in the syntax tree of the formulas. On the other hand, it makes the code more compact.
+
+The reason why rows is first called for all templates is because it will help to build the template tree and to attach the addressed resources from the data map onto the appropriate template they belong to, into their ``query model''.
+
+The query model is the object on a template that represents the query that will be translate into a query string.
+
+When calling the preEvaluate once again for all other properties for all templates, the preEvaluate function will simply be used in order to add the addressed resource properties into the appropriate query model.
+
+\lstinputlisting[
+    caption={pre-evaluation function},
+    label={lst:preEvaluate}
+]{code/allocation/preEvaluate.js}
+
+Within the pre-evaluate function, a relatively classic code structure encountered in interpreters, allows the program to navigate amongst the different nodes of the syntax tree of a formula. This is what listing~\ref{lst:preEvaluate} shows. 
+
+When a node of type formula is read from a template property, a recursive call to \texttt{preEvaluate} is made with the value of the expression contained in the formula. 
+
+When a node of type binary is read, a recursive call is made to \texttt{preEvaluate} for both the left expression and the right expression. Finally, if currently pre-evaluating the \texttt{Rows} property, the value of the operator is applied to both of these expressions. It is unnecessary to apply the operator for any other property type since we do not need to actually evaluate the expressions of the template properties yet.
+
+When an atomic expression is read (num, str, punc, datetime), the value of that expression is simply returned. In JavaScript all objects inherits a \texttt{toString} function. Here I invoke that function to make sure that dates (which are built using moment.js) are transformed into readable strings, in this way, it will be easy in the future to generate dates according to a given culture that could be configured within the system.
+
+What is really specific to this pre-evaluation function is how I enable the walk principle I have mentioned earlier. It relies on a cooperation between what is read in a node of type ``path'' and what is returned from reading a node with the atomic type ``identifier''. This deserves a subsection on it's own.
+
+\subsubsection{Walk principle}
+
+Recall that the parser generates a ``path'' node that contains a nested set of components. The value of a component is accessible through the property \texttt{content} and the next component (if any) is accessible from the \texttt{next} attribute. Listing~\ref{lst:path} showed a concrete example of such a node.
+
+\lstinputlisting[
+    caption={create path reader function},
+    label={lst:createPathReader}
+]{code/allocation/createPathReader.js}
+
+When reading a node of type \texttt{path}, the expression is first encapsulated into a \texttt{pathReader} which is a helper function returning an object through which the given path can easily be navigated through. Listing~\ref{lst:createPathReader} show how this helper is created.
+
+For an expression like \texttt{Map.Person[3]!Name} a first call to the \texttt{next} method of the path reader will return the content of the first object in the path chain, in this case, the value \texttt{\{type:'id’, value:’Map’\}}. A new call to that same method will return the content of next component in the path chain: \texttt{\{type:'punc’, value:’.’\}}. The next method can be called indefinitely. When a path has be read all the way through, the \texttt{next} method of the reader will simply return null. The \texttt{hasNext} method can helps to determine if there is a next element in the path.
+
+When the path reader is ready, a \texttt{walkTo} function is evaluated, based on the value of the expression contained in the first component of the path (in the case of the path expression \texttt{Map.Person[3]!Name}, this would be the value \texttt{Map}).
+
+When the \texttt{walkTo} function is resolved, it is called and the path reader along with the environment, are passed as it's input parameters. In this way, no matter what the function walkTo is, it can internally process anything it needs by using the path reader to advance in the current path and the environment to find the objects it needs to address.
+
+The function assigned to the \texttt{walkTo} variable is determined when the JavaScript engine reads an atomic expression of type \texttt{id}. It will check if the value is \texttt{index}. In the pre-evaluation context, \texttt{index} has no semantic meaning, null is just returned, It will then check if the value is equal to one of the reserved names associated to the existing set of walkTo functions. If it is none of those, the value of the expression is just returned as is.
+
+\subsubsection{Inferring the type of walkTo function}
+
+The system's requirements specifies that designers should be allowed to omit the path prefix (that first component in a path that helps to determine the walkTo function). The expression \texttt{Map.Person[3]!Name} would then become \texttt{Person[3]!Name}.
+
+It would be fairly easy to add support for such an omission into the web-based implementation. It is a matter of adding an extra function before returning an identifier's value when reading a node of type identifier. That function could then use the environment to lookup the ``unknown'' identifier's value in all of the possible address spaces. If the value is found in one of them, the walkTo function to return should be the one that allow to move into that address space. If the value is found in more that a single addressing space, then, the system should warn the designer that his choice is ambiguous.
+
+\subsubsection{Building the template Tree}
+
+The template tree is built when applying the pre-evaluate function on the Rows of all templates. In this case, when reading a binary node, the value of the operators will be applied onto the operands of the expression since the condition \texttt{env.property === 'Rows'} will be satisfied.
+
+An expression like \texttt{Form.txtPerson -< Map.activity WHERE Form.txtPerson.Name = 'Bob'} will cause the resource \texttt{activity} (found in the data map) to be stored in the query model of the template with name \texttt{txtPerson}.
+
 
 \subsection{Evaluate}
 \label{sec:Eval}

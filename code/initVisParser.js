@@ -1,7 +1,7 @@
 visParser.init({
-  tokenizer: tokenizer(streamReader(visMap.startUpFormStream)), 
-  canvas: visCanvas, 
-  form: formModule
+  tokenizer: tokenizer(streamReader(visStream)), 
+  canvas: canvas, 
+  form: form
 }); 
 
-visParser.Parse();
+visParser.parse();

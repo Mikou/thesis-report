@@ -8,7 +8,7 @@ Javascript was created by Brendan Eich in May 1995 at Netscape. It's name has ev
 
 In 2005, Jesse James Garrett coined the term ``Ajax''\cite{Garrett2005}, a shorthand for Asynchronous JavaScript + XML that involves a set of technologies allowing to asynchronously load data in the background, without the need of refreshing the entire page. This has been a main event in the history of JavaSript because it suddenly enabled to create richer and dynamic web applications. This has resulted in the language quickly gaining in popularity with a massive support from the open-source community that contributed to the language with mainstream libraries such as jQuery and Prototype.
 
-Over time, because it is the only client-side language supported by browsers JavaScript has become the standard and only language for doing web-development. Besides it's very lightweight specification the language comes with it's own set of particularities that can make it unintuitive to use.
+Over time, because it is the only client-side language supported by browsers, JavaScript has become the standard and only language for doing web-development. Besides it's very lightweight specification the language comes with it's own set of particularities that can make it unintuitive to use.
 
 \subsubsection{Asynchronous Calls}
 
@@ -166,8 +166,6 @@ Promise.all(data).then(function(randomValues) {
 
 Promises also provides a efficient way to handle the case where an operation needs to wait for multiple asynchronous calls through the ``all'' method as shown in listing~\ref{lst:promiseAll}
 
-
-
 \subsubsection{Prototypical inheritance}
 
 JavaScript uses prototypal inheritance which is a specific form of object-oriented code-reuse.
@@ -214,6 +212,7 @@ function object(o) {
 Later in the implementation I show how to practically use prototypal inheritance for supporting code-reuse between the different graphical components of the system that I will also describe.
 
 \subsubsection{Module Pattern}
+\label{sec:modulePattern}
 
 The module pattern\cite{Miraglia2007} has become a central concept. It helps to encapsulate the program's state within the scope of an anonymous function. Listing~\ref{lst:modulePattern} shows a naïve implementation of it.
 

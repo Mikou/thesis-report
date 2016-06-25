@@ -19,6 +19,5 @@ function readNext() {
     if(isOpChar(ch))    return readOperator();
     // EOL
     if (ch === "\n")    return { type:"EOL", value: input.next() }
-
     input.croak("Can't handle character: " + ch);
 }

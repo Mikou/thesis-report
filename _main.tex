@@ -1,4 +1,4 @@
-\documentclass[12pt, paperA4]{article}
+\documentclass[12pt, a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{import}
 \usepackage{listings}
@@ -16,7 +16,7 @@
 
 \setlength{\parskip}{0.5em}
 \lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
-\lstset{framextopmargin=50pt,frame=bottomline}
+\lstset{framextopmargin=50pt,frame=leftline}
 
 % TO BE REMOVE----------
 \usepackage[english]{babel}
@@ -52,16 +52,9 @@ Hello, here is some text without a meaning.This text should show what a printed 
 \import{sections/}{2.4_javascript.tex}
 
 \section{Research Design}
+\import{chapters/3_researchDesign/}{researchDesign}
 
 \section{Research}
-
-Throughout this project I attempt to show the feasibility of writing an interface builder system such as VisTool on a JavaScript engine within a browser environment. While developing, I have used a recent version of Google Chrome which provides a comfortable development tools and support for many of the new features available in the World Wide Web. I have also occasionally seen that the implementation also works in recent versions of Mozilla Firefox. However I not ported to much focus on browser compatibility which I believe could be the subject to extensive work in itself. I have not tested any code on Windows and the development environment I have created is targeted for a Linux environment.
-
-The implementation of the interpreter of the formulas defined in the vis-files has been an interesting part of the work. It has conducted to new issues caused by the fact that, when executed within a browser, the system operates remotely from all of the resources it depends. This has forced to adapt the entire architecture to the new environment.
-
-Initially the intent was to fetch the external data relative to the ``Rows'' property of a template from a service implementing the OData protocol which I will briefly talk about later on. This has shown to be harder than I initially thought. The query language specified by OData is more complex than an SQL query and depending on how the protocol is implemented the queries do not always seems to match the entities they are supposed to be bound to. Ultimately I have abandoned my trials with OData and taken advantage of the JSON aggregate functions available in postgreSQL in order to produce data that can be consumed by the system. Further, since it is an accepted policy that SQL queries should never be sent over a network, I have decided that it should be an option for the context in which the system is used to decide where how and when the query models constructed by the system should be translate query string and similarly, how where and when these strings should be executed against the data provider.
-
-Throughout the implementation, I have realized the increasing necessity and possibilities of making the system highly tailorable. Some aspects in the implementation are still imperfect but I show how some of main principles being the ``walk principle'' and the detection of cyclical parent references can be achieved.
 
 \import{sections/}{4_research.tex}
 
